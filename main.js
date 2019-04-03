@@ -1,41 +1,42 @@
-const net = "# physical nodes: 6\n" +
-  "# state nodes: 8\n" +
-  "# markov order: 3\n" +
-  "*Vertices\n" +
-  "1 \"i\"\n" +
-  "2 \"j\"\n" +
-  "3 \"k\"\n" +
-  "4 \"l\"\n" +
-  "5 \"m\"\n" +
-  "6 \"n\"\n" +
-  "*States\n" +
-  "#state_id physical_id name\n" +
-  "1 3 \"3 3 3\"\n" +
-  "2 1 \"3 3 1\"\n" +
-  "3 2 \"3 1 2\"\n" +
-  "4 5 \"1 2 5\"\n" +
-  "5 4 \"4 4 4\"\n" +
-  "6 1 \"4 4 1\"\n" +
-  "7 2 \"4 1 2\"\n" +
-  "8 6 \"1 2 6\"\n" +
-  "*Links\n" +
-  "#source_id target_id weight\n" +
-  "1 2 4.0\n" +
-  "2 3 4.0\n" +
-  "3 4 4.0\n" +
-  "5 6 4.0\n" +
-  "6 7 4.0\n" +
-  "7 8 4.0\n" +
-  "*Contexts\n" +
-  "#state_id physical_id prior_id [history...] \n" +
-  "1 3 3 3\n" +
-  "2 1 3 3\n" +
-  "3 2 1 3\n" +
-  "4 5 2 1\n" +
-  "5 4 4 4\n" +
-  "6 1 4 4\n" +
-  "7 2 1 4\n" +
-  "8 6 2 1\n";
+const net = `# physical nodes: 6
+# state nodes: 8
+# markov order: 3
+*Vertices
+1 "i"
+2 "j"
+3 "k"
+4 "l"
+5 "m"
+6 "n"
+*States
+#state_id physical_id name
+1 3 "3 3 3"
+2 1 "3 3 1"
+3 2 "3 1 2"
+4 5 "1 2 5"
+5 4 "4 4 4"
+6 1 "4 4 1"
+7 2 "4 1 2"
+8 6 "1 2 6"
+*Links
+#source_id target_id weight
+1 2 4.0
+2 3 4.0
+3 4 4.0
+5 6 4.0
+6 7 4.0
+7 8 4.0
+*Contexts
+#state_id physical_id prior_id [history...] 
+1 3 3 3
+2 1 3 3
+3 2 1 3
+4 5 2 1
+5 4 4 4
+6 1 4 4
+7 2 1 4
+8 6 2 1
+`;
 
 const nodes = [];
 const states = [];
@@ -145,10 +146,12 @@ state = state.enter()
   .append("g")
   .attr("class", "state")
   .on("mouseover", function (d) {
+    d3.select(this).select("circle").attr("stroke", "red");
     link.filter(link => link.source === d || link.target === d)
       .attr("stroke", "red");
   })
   .on("mouseout", function (d) {
+    d3.select(this).select("circle").attr("stroke", "#000");
     link.filter(link => link.source === d || link.target === d)
       .attr("stroke", "black");
   })
