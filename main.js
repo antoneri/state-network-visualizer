@@ -1,41 +1,41 @@
-const net = '# physical nodes: 6\n' +
-  '# state nodes: 8\n' +
-  '# markov order: 3\n' +
-  '*Vertices\n' +
-  '1 "i"\n' +
-  '2 "j"\n' +
-  '3 "k"\n' +
-  '4 "l"\n' +
-  '5 "m"\n' +
-  '6 "n"\n' +
-  '*States\n' +
-  '#state_id physical_id name\n' +
-  '1 3 "3 3 3"\n' +
-  '2 1 "3 3 1"\n' +
-  '3 2 "3 1 2"\n' +
-  '4 5 "1 2 5"\n' +
-  '5 4 "4 4 4"\n' +
-  '6 1 "4 4 1"\n' +
-  '7 2 "4 1 2"\n' +
-  '8 6 "1 2 6"\n' +
-  '*Links\n' +
-  '#source_id target_id weight\n' +
-  '1 2 4.0\n' +
-  '2 3 4.0\n' +
-  '3 4 4.0\n' +
-  '5 6 4.0\n' +
-  '6 7 4.0\n' +
-  '7 8 4.0\n' +
-  '*Contexts\n' +
-  '#state_id physical_id prior_id [history...] \n' +
-  '1 3 3 3\n' +
-  '2 1 3 3\n' +
-  '3 2 1 3\n' +
-  '4 5 2 1\n' +
-  '5 4 4 4\n' +
-  '6 1 4 4\n' +
-  '7 2 1 4\n' +
-  '8 6 2 1\n';
+const net = "# physical nodes: 6\n" +
+  "# state nodes: 8\n" +
+  "# markov order: 3\n" +
+  "*Vertices\n" +
+  "1 \"i\"\n" +
+  "2 \"j\"\n" +
+  "3 \"k\"\n" +
+  "4 \"l\"\n" +
+  "5 \"m\"\n" +
+  "6 \"n\"\n" +
+  "*States\n" +
+  "#state_id physical_id name\n" +
+  "1 3 \"3 3 3\"\n" +
+  "2 1 \"3 3 1\"\n" +
+  "3 2 \"3 1 2\"\n" +
+  "4 5 \"1 2 5\"\n" +
+  "5 4 \"4 4 4\"\n" +
+  "6 1 \"4 4 1\"\n" +
+  "7 2 \"4 1 2\"\n" +
+  "8 6 \"1 2 6\"\n" +
+  "*Links\n" +
+  "#source_id target_id weight\n" +
+  "1 2 4.0\n" +
+  "2 3 4.0\n" +
+  "3 4 4.0\n" +
+  "5 6 4.0\n" +
+  "6 7 4.0\n" +
+  "7 8 4.0\n" +
+  "*Contexts\n" +
+  "#state_id physical_id prior_id [history...] \n" +
+  "1 3 3 3\n" +
+  "2 1 3 3\n" +
+  "3 2 1 3\n" +
+  "4 5 2 1\n" +
+  "5 4 4 4\n" +
+  "6 1 4 4\n" +
+  "7 2 1 4\n" +
+  "8 6 2 1\n";
 
 const nodes = [];
 const states = [];
@@ -71,11 +71,11 @@ lines.forEach(line => {
   }
 });
 
-const phys_links = [].concat.apply([], links.map(({ source, target, weight }) => ({
+const phys_links = links.map(({ source, target, weight }) => ({
   source: source.node,
   target: target.node,
   weight,
-})));
+}));
 
 function key(d) {
   return d ? d.id : this.id;
@@ -177,17 +177,13 @@ const simulation = d3.forceSimulation(nodes)
   .force("charge", d3.forceManyBody().strength(-1000))
   .force("link", d3.forceLink(phys_links).distance(200));
 
-let forceX = d3.forceX(d => d.node.x);
-let forceY = d3.forceY(d => d.node.y);
-
-d3.forceSimulation(states)
-  .force("collide", d3.forceCollide(20))
-  .force("x", forceX.strength(.5))
-  .force("y", forceY.strength(.5));
+nodes.forEach(node =>
+  node.simulation = d3.forceSimulation(node.states)
+    .force("collide", d3.forceCollide(20))
+    .force("radial", d3.forceRadial(25, node.x, node.y).strength(0.5)));
 
 simulation.on("tick", () => {
-  forceX.x(d => d.node.x);
-  forceY.y(d => d.node.y);
+  node.each(d => d.simulation.force("radial").x(d.x).y(d.y));
 
   link
     .attr("x1", d => d.source.x)
