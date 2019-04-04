@@ -7,25 +7,29 @@ const parse = (net) => {
   const states = [];
   const links = [];
 
-  const lines = net.split("\n").filter(line => !line.startsWith("#"));
+  const lines = net.split("\n")
+    .filter(line => !line.startsWith("#"));
 
-  let context = null;
+  let context = "";
 
-  lines.forEach(line => {
+  for (let line of lines) {
     if (line.startsWith("*")) {
       context = line.toLowerCase();
-    } else if (context === "*vertices") {
-      let [id, name, ...rest] = line.split(" ");
+      continue;
+    }
+
+    if (context === "*vertices") {
+      let [id, name] = line.split(" ");
       id = +id;
       name = name.replace(/^"|"$/g, "");
-      nodes.push({ id, name, x: 0, y: 0, states: [] });
+      nodes.push({ id, name, states: [] });
     } else if (context === "*states") {
-      let [id, phys_id, name, ...rest] = line.split(" ");
+      let [id, phys_id, name] = line.split(" ");
       id = +id;
       phys_id = +phys_id;
       name = name.replace(/^"|"$/g, "");
       let node = nodes.find(node => node.id === phys_id);
-      let state = { id, node, name, x: 0, y: 0 };
+      let state = { id, node, name };
       node.states.push(state);
       states.push(state);
     } else if (context === "*links") {
@@ -35,7 +39,7 @@ const parse = (net) => {
       weight = +weight;
       links.push({ source, target, weight });
     }
-  });
+  }
 
   return { nodes, states, links };
 };
