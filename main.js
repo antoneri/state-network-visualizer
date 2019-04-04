@@ -53,28 +53,20 @@ const draw = (net) => {
     weight,
   }));
 
-  function key(d) {
-    return d ? d.id : this.id;
-  }
-
   const { innerWidth, innerHeight } = window;
 
   const zoom = d3.zoom().scaleExtent([0.1, 1000]);
-  const initialTransform = d3.zoomIdentity.translate(50, 50);
 
   const svg = d3.select("#state-network")
     .call(zoom)
-    .call(zoom.transform, initialTransform)
+    .call(zoom.transform, d3.zoomIdentity)
     .append("g")
     .attr("id", "zoomable")
-    .attr("transform", initialTransform);
+    .attr("transform", d3.zoomIdentity);
 
-  zoom.on("zoom", () => {
-    svg.attr("transform", d3.event.transform);
-  });
+  zoom.on("zoom", () => svg.attr("transform", d3.event.transform));
 
-  let node = svg.selectAll(".node")
-    .data(nodes, key);
+  let node = svg.selectAll(".node").data(nodes);
 
   node.exit().remove();
 
@@ -85,8 +77,6 @@ const draw = (net) => {
 
   node.append("circle")
     .attr("r", 50)
-    .attr("cx", d => d.x)
-    .attr("cy", d => d.y)
     .attr("fill", "#fafafa")
     .attr("stroke", "#888");
 
@@ -95,49 +85,39 @@ const draw = (net) => {
     .attr("text-anchor", "middle")
     .attr("dy", 12)
     .style("font-style", "italic")
-    .style("font-size", 40)
-    .attr("x", d => d.x)
-    .attr("y", d => d.y);
+    .style("font-size", 40);
 
-  let link = svg.selectAll(".link").data(links, key);
+  let link = svg.selectAll(".link").data(links);
 
   link.exit().remove();
 
   link = link.enter()
     .append("line")
     .attr("class", "link")
-    .attr("x1", d => d.source.x)
-    .attr("y1", d => d.source.y)
-    .attr("x2", d => d.target.x)
-    .attr("y2", d => d.target.y)
     .attr("opacity", 0.8)
     .attr("stroke", "#000")
     .attr("stroke-width", d => d.weight * 0.5)
     .merge(link);
 
-  let state = svg.selectAll(".state").data(states, key);
+  let state = svg.selectAll(".state").data(states);
 
   state.exit().remove();
+
+  const setColor = color => function (d) {
+    d3.select(this).select("circle").attr("stroke", color);
+    link.filter(link => link.source === d || link.target === d)
+      .attr("stroke", color);
+  };
 
   state = state.enter()
     .append("g")
     .attr("class", "state")
-    .on("mouseover", function (d) {
-      d3.select(this).select("circle").attr("stroke", "red");
-      link.filter(link => link.source === d || link.target === d)
-        .attr("stroke", "red");
-    })
-    .on("mouseout", function (d) {
-      d3.select(this).select("circle").attr("stroke", "#000");
-      link.filter(link => link.source === d || link.target === d)
-        .attr("stroke", "black");
-    })
+    .on("mouseover", setColor("#f00"))
+    .on("mouseout", setColor("#000"))
     .merge(state);
 
   state.append("circle")
     .attr("r", 15)
-    .attr("cx", d => d.x)
-    .attr("cy", d => d.y)
     .attr("fill", "#fff")
     .attr("stroke", "#000")
     .attr("opacity", 0.9);
@@ -147,9 +127,7 @@ const draw = (net) => {
     .attr("text-anchor", "middle")
     .attr("dy", 5)
     .style("font-style", "italic")
-    .style("font-size", 15)
-    .attr("x", d => d.x)
-    .attr("y", d => d.y);
+    .style("font-size", 15);
 
   const simulation = d3.forceSimulation(nodes)
     .force("center", d3.forceCenter(innerWidth / 2, innerHeight / 2))
@@ -160,7 +138,7 @@ const draw = (net) => {
   nodes.forEach(node =>
     node.simulation = d3.forceSimulation(node.states)
       .force("collide", d3.forceCollide(20))
-      .force("radial", d3.forceRadial(25, node.x, node.y).strength(0.5)));
+      .force("radial", d3.forceRadial(25).strength(0.5)));
 
   simulation.on("tick", () => {
     node.each(d => d.simulation.force("radial").x(d.x).y(d.y));
