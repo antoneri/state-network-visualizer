@@ -55,6 +55,79 @@ const draw = (net) => {
 
   const { innerWidth, innerHeight } = window;
 
+  const simulation = d3.forceSimulation(nodes)
+    .force("center", d3.forceCenter(innerWidth / 2, innerHeight / 2))
+    .force("collide", d3.forceCollide(100))
+    .force("charge", d3.forceManyBody().strength(-1000))
+    .force("link", d3.forceLink(phys_links).distance(200));
+
+  nodes.forEach(node =>
+    node.simulation = d3.forceSimulation(node.states)
+      .force("collide", d3.forceCollide(20))
+      .force("charge", d3.forceManyBody().strength(-200))
+      .force("radial", d3.forceRadial(25).strength(0.5)));
+
+  function dragstarted(d) {
+    if (!d3.event.active) {
+      simulation.alphaTarget(0.3).restart();
+      nodes.forEach(node => node.simulation.alphaTarget(0.5).restart());
+    }
+    d.fx = d.x;
+    d.fy = d.y;
+
+    d.states.forEach(state => {
+      state.fx = state.x;
+      state.fy = state.y;
+    });
+  }
+
+  function dragged(d) {
+    d.fx = d3.event.x;
+    d.fy = d3.event.y;
+
+    d.states.forEach(state => {
+      state.fx += d3.event.dx;
+      state.fy += d3.event.dy;
+    });
+  }
+
+  function dragended(d) {
+    if (!d3.event.active) {
+      simulation.alphaTarget(0);
+      nodes.forEach(node => node.simulation.alphaTarget(0));
+    }
+    d.fx = null;
+    d.fy = null;
+
+    d.states.forEach(state => {
+      state.fx = null;
+      state.fy = null;
+    });
+  }
+
+  function statedragstarted(d) {
+    if (!d3.event.active) {
+      simulation.alphaTarget(0.3).restart();
+      d.node.simulation.alphaTarget(0.5).restart();
+    }
+    d.fx = d.x;
+    d.fy = d.y;
+  }
+
+  function statedragged(d) {
+    d.fx = d3.event.x;
+    d.fy = d3.event.y;
+  }
+
+  function statedragended(d) {
+    if (!d3.event.active) {
+      simulation.alphaTarget(0);
+      d.node.simulation.alphaTarget(0);
+    }
+    d.fx = null;
+    d.fy = null;
+  }
+
   const zoom = d3.zoom().scaleExtent([0.1, 1000]);
 
   const svg = d3.select("#state-network")
@@ -73,6 +146,10 @@ const draw = (net) => {
   node = node.enter()
     .append("g")
     .attr("class", "node")
+    .call(d3.drag()
+      .on("start", dragstarted)
+      .on("drag", dragged)
+      .on("end", dragended))
     .merge(node);
 
   node.append("circle")
@@ -114,6 +191,10 @@ const draw = (net) => {
     .attr("class", "state")
     .on("mouseover", setColor("#f00"))
     .on("mouseout", setColor("#000"))
+    .call(d3.drag()
+      .on("start", statedragstarted)
+      .on("drag", statedragged)
+      .on("end", statedragended))
     .merge(state);
 
   state.append("circle")
@@ -128,17 +209,6 @@ const draw = (net) => {
     .attr("dy", 5)
     .style("font-style", "italic")
     .style("font-size", 15);
-
-  const simulation = d3.forceSimulation(nodes)
-    .force("center", d3.forceCenter(innerWidth / 2, innerHeight / 2))
-    .force("collide", d3.forceCollide(100))
-    .force("charge", d3.forceManyBody().strength(-1000))
-    .force("link", d3.forceLink(phys_links).distance(200));
-
-  nodes.forEach(node =>
-    node.simulation = d3.forceSimulation(node.states)
-      .force("collide", d3.forceCollide(20))
-      .force("radial", d3.forceRadial(25).strength(0.5)));
 
   simulation.on("tick", () => {
     node.each(d => d.simulation.force("radial").x(d.x).y(d.y));
