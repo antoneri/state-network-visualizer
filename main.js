@@ -192,12 +192,15 @@ const draw = (net) => {
 
   link.exit().remove();
 
+  const maxWeight = Math.max(...links.map(link => link.weight));
+  const linkWidth = d3.scaleLinear().domain([0, maxWeight]).range([0, 2]);
+
   link = link.enter()
     .append("line")
     .attr("class", "link")
     .attr("opacity", 0.8)
     .attr("stroke", "#000")
-    .attr("stroke-width", d => d.weight * 0.5)
+    .attr("stroke-width", d => linkWidth(d.weight))
     .attr("marker-end", "url(#arrow_black)")
     .merge(link);
 
