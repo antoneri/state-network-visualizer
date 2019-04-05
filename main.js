@@ -176,10 +176,12 @@ const draw = (net) => {
   node.append("circle")
     .attr("r", 50)
     .attr("fill", "#fafafa")
-    .attr("stroke", "#888");
+    .attr("stroke", "#888")
+    .append("title")
+    .text(d => d.name);
 
   node.append("text")
-    .text(d => d.name)
+    .text(d => d.id)
     .attr("text-anchor", "middle")
     .attr("fill", "#999")
     .attr("dy", 12)
@@ -225,7 +227,9 @@ const draw = (net) => {
     .attr("r", 15)
     .attr("fill", "#fff")
     .attr("stroke", "#000")
-    .attr("opacity", 0.9);
+    .attr("opacity", 0.9)
+    .append("title")
+    .text(d => d.name);
 
   state.append("text")
     .text(d => d.id)
