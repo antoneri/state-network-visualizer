@@ -135,6 +135,22 @@ const draw = (net) => {
 
   const zoom = d3.zoom().scaleExtent([0.1, 1000]);
 
+  const defs = d3.select("#state-network").append("defs");
+
+  defs.selectAll("marker")
+    .data(["black", "red"])
+    .enter()
+    .append("marker")
+    .attr("id", d => `arrow_${d}`)
+    .attr("markerHeight", 5)
+    .attr("markerWidth", 5)
+    .attr("orient", "auto")
+    .attr("refX", 3)
+    .attr("viewBox", "-5 -5 10 10")
+    .append("path")
+    .attr("d", "M 0,0 m -5,-5 L 5,0 L -5,5 Z")
+    .attr("fill", d => d);
+
   const svg = d3.select("#state-network")
     .call(zoom)
     .call(zoom.transform, d3.zoomIdentity)
@@ -179,6 +195,7 @@ const draw = (net) => {
     .attr("opacity", 0.8)
     .attr("stroke", "#000")
     .attr("stroke-width", d => d.weight * 0.5)
+    .attr("marker-end", "url(#arrow_black)")
     .merge(link);
 
   let state = svg.selectAll(".state").data(states);
@@ -188,14 +205,15 @@ const draw = (net) => {
   const setColor = color => function (d) {
     d3.select(this).select("circle").attr("stroke", color);
     link.filter(link => link.source === d || link.target === d)
-      .attr("stroke", color);
+      .attr("stroke", color)
+      .attr("marker-end", `url(#arrow_${color})`);
   };
 
   state = state.enter()
     .append("g")
     .attr("class", "state")
-    .on("mouseover", setColor("#f00"))
-    .on("mouseout", setColor("#000"))
+    .on("mouseover", setColor("red"))
+    .on("mouseout", setColor("black"))
     .call(d3.drag()
       .on("start", statedragstarted)
       .on("drag", statedragged)
@@ -215,14 +233,28 @@ const draw = (net) => {
     .style("font-style", "italic")
     .style("font-size", 15);
 
+  const drawLink = r => function (d) {
+    const x1 = d.source.x || 0;
+    const y1 = d.source.y || 0;
+    const x2 = d.target.x || 0;
+    const y2 = d.target.y || 0;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const l = Math.sqrt(dx * dx + dy * dy) || 1;
+    const dir = { x: dx / l, y: dy / l };
+
+    d3.select(this)
+      .attr("x1", x1 + r * dir.x)
+      .attr("y1", y1 + r * dir.y)
+      .attr("x2", x2 - r * dir.x)
+      .attr("y2", y2 - r * dir.y);
+  };
+
   simulation.on("tick", () => {
     node.each(d => d.simulation.force("radial").x(d.x).y(d.y));
 
     link
-      .attr("x1", d => d.source.x)
-      .attr("y1", d => d.source.y)
-      .attr("x2", d => d.target.x)
-      .attr("y2", d => d.target.y);
+      .each(drawLink(15));
 
     state.select("circle")
       .attr("cx", d => d.x)
