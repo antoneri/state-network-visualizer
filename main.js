@@ -24,25 +24,25 @@ const parse = (net) => {
     }
 
     if (context === "*vertices") {
-      let [id, name] = line.split(" ");
-      id = +id;
-      name = name.replace(/^"|"$/g, "");
-      nodes.push({ id, name, states: [] });
+      const [_, id, name] = line.match(/(\d+) "(.+)"/);
+      nodes.push({ id: +id, name, states: [] });
     } else if (context === "*states") {
-      let [id, phys_id, name] = line.split(" ");
-      id = +id;
-      phys_id = +phys_id;
-      name = name.replace(/^"|"$/g, "");
-      let node = nodes.find(node => node.id === phys_id);
-      let state = { id, node, name };
+      const [_, id, phys_id, name] = line.match(/(\d+) (\d+) "(.+)"/);
+      const node = nodes.find(node => node.id === +phys_id);
+      if (!node) {
+        throw new Error("No physical node found!");
+      }
+      const state = { id: +id, node, name };
       node.states.push(state);
       states.push(state);
     } else if (context === "*links") {
-      let [source, target, weight] = line.split(" ");
-      source = states.find(state => state.id === +source);
-      target = states.find(state => state.id === +target);
-      weight = +weight;
-      links.push({ source, target, weight });
+      const [_, source_id, target_id, weight] = line.match(/(\d+) (\d+) ([\d\.]+)/);
+      const source = states.find(state => state.id === +source_id);
+      const target = states.find(state => state.id === +target_id);
+      if (!(source && target)) {
+        throw new Error("Source or target state not found!");
+      }
+      links.push({ source, target, weight: +weight });
     }
   }
 
