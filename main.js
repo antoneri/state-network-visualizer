@@ -181,6 +181,7 @@ const draw = (net) => {
   node.append("text")
     .text(d => d.name)
     .attr("text-anchor", "middle")
+    .attr("fill", "#999")
     .attr("dy", 12)
     .style("font-style", "italic")
     .style("font-size", 40);
