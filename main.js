@@ -1,4 +1,9 @@
-fetch("states.net")
+const url = new URL(window.location.href);
+const net = url.searchParams.get("net");
+
+const filename = net || "states.net";
+
+fetch(filename)
   .then(res => res.text())
   .then(text => run(text));
 
