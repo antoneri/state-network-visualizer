@@ -75,7 +75,7 @@ const draw = (net) => {
   function dragstarted(d) {
     if (!d3.event.active) {
       simulation.alphaTarget(0.3).restart();
-      nodes.forEach(node => node.simulation.alphaTarget(0.5).restart());
+      nodes.forEach(node => node.simulation.alphaTarget(0.8).restart());
     }
     d.fx = d.x;
     d.fy = d.y;
@@ -112,7 +112,7 @@ const draw = (net) => {
 
   function statedragstarted(d) {
     if (!d3.event.active) {
-      simulation.alphaTarget(0.3).restart();
+      simulation.alphaTarget(0.01).restart();
       d.node.simulation.alphaTarget(0.5).restart();
     }
     d.fx = d.x;
