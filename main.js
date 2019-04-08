@@ -209,10 +209,18 @@ const draw = (net) => {
   state.exit().remove();
 
   const setColor = color => function (d) {
-    d3.select(this).select("circle").attr("stroke", color);
-    link.filter(link => link.source === d || link.target === d)
-      .attr("stroke", color)
-      .attr("marker-end", `url(#arrow_${color})`);
+    const circle = d3.select(this).select("circle");
+    if (circle.attr("stroke") === color) return;
+    circle.attr("stroke", color);
+    const connectedNodes = new Set();
+    link.filter(link => {
+      const isSource = link.source === d;
+      if (isSource) connectedNodes.add(link.target);
+      return isSource;
+    })
+      .attr("stroke", color).attr("marker-end", `url(#arrow_${color})`);
+    state.select(function (d) { return connectedNodes.has(d) ? this : null; })
+      .each(setColor(color));
   };
 
   state = state.enter()
