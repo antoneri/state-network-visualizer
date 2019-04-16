@@ -67,16 +67,16 @@ const draw = (net) => {
     .force("charge", d3.forceManyBody().strength(-1000))
     .force("link", d3.forceLink(phys_links).distance(200));
 
-  nodes.forEach(node =>
-    node.simulation = d3.forceSimulation(node.states)
-      .force("collide", d3.forceCollide(20))
-      .force("charge", d3.forceManyBody().strength(-200))
-      .force("radial", d3.forceRadial(25).strength(0.5)));
+  const stateSimulation = d3.forceSimulation(states)
+    .force("collide", d3.forceCollide(4 / 3 * stateRadius))
+    .force("charge", d3.forceManyBody().strength(-200))
+    .force("link", d3.forceLink(links).distance(200))
+    .force("radial", d3.forceRadial(nodeRadius / 2, d => d.node.x, d => d.node.y).strength(0.8));
 
   function dragstarted(d) {
     if (!d3.event.active) {
       simulation.alphaTarget(0.3).restart();
-      nodes.forEach(node => node.simulation.alphaTarget(0.8).restart());
+      stateSimulation.alphaTarget(0.8).restart();
     }
     d.fx = d.x;
     d.fy = d.y;
@@ -100,7 +100,7 @@ const draw = (net) => {
   function dragended(d) {
     if (!d3.event.active) {
       simulation.alphaTarget(0);
-      nodes.forEach(node => node.simulation.alphaTarget(0));
+      stateSimulation.alphaTarget(0);
     }
     d.fx = null;
     d.fy = null;
@@ -114,7 +114,7 @@ const draw = (net) => {
   function statedragstarted(d) {
     if (!d3.event.active) {
       simulation.alphaTarget(0.01).restart();
-      d.node.simulation.alphaTarget(0.5).restart();
+      stateSimulation.alphaTarget(0.5).restart();
     }
     d.fx = d.x;
     d.fy = d.y;
@@ -128,7 +128,7 @@ const draw = (net) => {
   function statedragended(d) {
     if (!d3.event.active) {
       simulation.alphaTarget(0);
-      d.node.simulation.alphaTarget(0);
+      stateSimulation.alphaTarget(0);
     }
     d.fx = null;
     d.fy = null;
@@ -268,7 +268,9 @@ const draw = (net) => {
   };
 
   simulation.on("tick", () => {
-    node.each(d => d.simulation.force("radial").x(d.x).y(d.y));
+    stateSimulation.force("radial")
+      .x(d => d.node.x)
+      .y(d => d.node.y);
 
     link
       .each(drawLink(15));
