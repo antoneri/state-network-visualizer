@@ -51,6 +51,9 @@ const parse = (net) => {
 
 const draw = (net) => {
   const { nodes, states, links } = net;
+  const { innerWidth, innerHeight } = window;
+  const nodeRadius = 50;
+  const stateRadius = 15;
 
   const phys_links = links.map(({ source, target, weight }) => ({
     source: source.node,
@@ -58,11 +61,9 @@ const draw = (net) => {
     weight,
   }));
 
-  const { innerWidth, innerHeight } = window;
-
   const simulation = d3.forceSimulation(nodes)
     .force("center", d3.forceCenter(innerWidth / 2, innerHeight / 2))
-    .force("collide", d3.forceCollide(100))
+    .force("collide", d3.forceCollide(2 * nodeRadius))
     .force("charge", d3.forceManyBody().strength(-1000))
     .force("link", d3.forceLink(phys_links).distance(200));
 
@@ -174,7 +175,7 @@ const draw = (net) => {
     .merge(node);
 
   node.append("circle")
-    .attr("r", 50)
+    .attr("r", nodeRadius)
     .attr("fill", "#fafafa")
     .attr("stroke", "#888")
     .append("title")
@@ -235,7 +236,7 @@ const draw = (net) => {
     .merge(state);
 
   state.append("circle")
-    .attr("r", 15)
+    .attr("r", stateRadius)
     .attr("fill", "#fff")
     .attr("stroke", "#000")
     .attr("opacity", 0.9)
