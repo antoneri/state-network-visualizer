@@ -273,7 +273,7 @@ const draw = (net) => {
       .y(d => d.node.y);
 
     link
-      .each(drawLink(15));
+      .each(drawLink(stateRadius));
 
     state.select("circle")
       .attr("cx", d => d.x)
