@@ -250,24 +250,22 @@ function draw(net, tree = null) {
       }))
     .merge(state);
 
-  const colors = {
-    1: d3.schemeBlues[9],
-    2: d3.schemeGreens[9],
-    3: d3.schemeOranges[9],
-    4: d3.schemePurples[9],
-    5: d3.schemeReds[9],
-    6: d3.schemeGreys[9],
+  const colorSchemes = {
+    1: d3.schemeBuPu[9],
+    2: d3.schemeOrRd[9],
+    3: d3.schemeYlGn[9],
+    4: d3.schemeGreys[9],
   };
 
-  const numColors = Object.keys(colors).length;
+  const numColors = Object.keys(colorSchemes).length;
 
   state.append("circle")
     .attr("r", stateRadius)
     .attr("fill", d => {
       if (!tree || !treeById.has(d.id)) return "#fff";
       const path = treeById.get(d.id).path;
-      const scheme = colors[(path[0] > numColors ? numColors : path[0])];
-      return path.length > 2 ? scheme[2 * path[1] % scheme.length] : scheme[2];
+      const scheme = colorSchemes[Math.min(path[0], numColors)];
+      return scheme[path.length > 2 ? (2 + path[1]) % scheme.length : 2];
     })
     .attr("stroke", "#000")
     .attr("opacity", 0.9)
