@@ -120,9 +120,9 @@ function draw(net, tree = null) {
     .force("link", d3.forceLink(phys_links).distance(200));
 
   const stateSimulation = d3.forceSimulation(states)
-    .force("collide", d3.forceCollide(4 / 3 * stateRadius))
+    .force("collide", d3.forceCollide(stateRadius))
     .force("charge", d3.forceManyBody().strength(-200))
-    .force("link", d3.forceLink(links).distance(200))
+    .force("link", d3.forceLink(links).distance(d => d.source.node === d.target.node ? 2 * nodeRadius : 200))
     .force("radial", d3.forceRadial(nodeRadius / 2, d => d.node.x, d => d.node.y).strength(0.8));
 
   const dragHelper = {
