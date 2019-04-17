@@ -1,55 +1,50 @@
 const url = new URL(window.location.href);
 const net = url.searchParams.get("net");
-
 const filename = net || "states.net";
 
 fetch(filename)
   .then(res => res.text())
-  .then(text => run(text));
+  .then(text => draw(parse(text)));
 
-const parse = (net) => {
+function parse(net) {
   const nodes = [];
   const states = [];
   const links = [];
 
-  const lines = net.split("\n")
-    .filter(line => !line.startsWith("#"));
-
   let context = "";
 
-  for (let line of lines) {
-    if (line.startsWith("*")) {
-      context = line.toLowerCase();
-      continue;
-    }
-
-    if (context === "*vertices") {
-      const [_, id, name] = line.match(/(\d+) "(.+)"/);
-      nodes.push({ id: +id, name, states: [] });
-    } else if (context === "*states") {
-      const [_, id, phys_id, name] = line.match(/(\d+) (\d+) "(.+)"/);
-      const node = nodes.find(node => node.id === +phys_id);
-      if (!node) {
-        throw new Error("No physical node found!");
+  net.split("\n")
+    .filter(line => !line.startsWith("#"))
+    .forEach((line) => {
+      if (line.startsWith("*")) {
+        context = line.toLowerCase();
+      } else if (context === "*vertices") {
+        const [_, id, name] = line.match(/(\d+) "(.+)"/);
+        nodes.push({ id: +id, name, states: [] });
+      } else if (context === "*states") {
+        const [_, id, phys_id, name] = line.match(/(\d+) (\d+) "(.+)"/);
+        const node = nodes.find(node => node.id === +phys_id);
+        if (!node) {
+          throw new Error("No physical node found!");
+        }
+        const state = { id: +id, node, name };
+        node.states.push(state);
+        states.push(state);
+      } else if (context === "*links") {
+        const [_, source_id, target_id, weight] = line.match(/(\d+) (\d+) ([\d\.]+)/);
+        const source = states.find(state => state.id === +source_id);
+        const target = states.find(state => state.id === +target_id);
+        if (!(source && target)) {
+          throw new Error("Source or target state not found!");
+        }
+        links.push({ source, target, weight: +weight });
       }
-      const state = { id: +id, node, name };
-      node.states.push(state);
-      states.push(state);
-    } else if (context === "*links") {
-      const [_, source_id, target_id, weight] = line.match(/(\d+) (\d+) ([\d\.]+)/);
-      const source = states.find(state => state.id === +source_id);
-      const target = states.find(state => state.id === +target_id);
-      if (!(source && target)) {
-        throw new Error("Source or target state not found!");
-      }
-      links.push({ source, target, weight: +weight });
-    }
-  }
+    });
 
   return { nodes, states, links };
-};
+}
 
-const draw = (net) => {
+function draw(net) {
   const { nodes, states, links } = net;
   const { innerWidth, innerHeight } = window;
   const nodeRadius = 50;
@@ -134,8 +129,6 @@ const draw = (net) => {
     d.fy = null;
   }
 
-  const zoom = d3.zoom().scaleExtent([0.1, 1000]);
-
   const defs = d3.select("#state-network").append("defs");
 
   defs.selectAll("marker")
@@ -151,6 +144,8 @@ const draw = (net) => {
     .append("path")
     .attr("d", "M 0,0 m -5,-5 L 5,0 L -5,5 Z")
     .attr("fill", d => d);
+
+  const zoom = d3.zoom().scaleExtent([0.1, 1000]);
 
   const svg = d3.select("#state-network")
     .call(zoom)
@@ -291,9 +286,4 @@ const draw = (net) => {
       .attr("x", d => d.x)
       .attr("y", d => d.y);
   });
-};
-
-const run = (text) => {
-  const net = parse(text);
-  draw(net);
-};
+}
