@@ -1,6 +1,6 @@
 const url = new URL(window.location.href);
 const net = url.searchParams.get("net");
-const filename = net || "states.net";
+const filename = net || "example.net";
 
 let treename = filename;
 if (filename.lastIndexOf(".") !== -1) {
