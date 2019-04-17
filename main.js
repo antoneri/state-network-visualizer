@@ -64,14 +64,23 @@ function parseNet(net) {
 }
 
 function parseTree(tree) {
-  const result = [];
+  const result = {
+    codelength: null,
+    nodes: [],
+  };
 
   tree.split("\n")
     .forEach((line) => {
+      if (!result.codelength) {
+        const codelengthMatch = line.match(/^#\s?codelength.*?(\d[\.\d]+)/im);
+        if (codelengthMatch) {
+          result.codelength = +codelengthMatch[1];
+        }
+      }
       const match = line.match(/^(\d[:\d]+) (\d[\.\d]*) \"(\w+)\" (\d+)(?: (\d+))?$/);
       if (match) {
         const [_, path, flow, name, id, physId] = match;
-        result.push({
+        result.nodes.push({
           path: path.split(":").map(Number),
           flow: +flow,
           name,
@@ -92,7 +101,7 @@ function draw(net, tree = null) {
 
   const treeById = new Map();
   if (tree) {
-    tree.filter(node => node.stateId)
+    tree.nodes.filter(node => node.stateId)
       .forEach(node => treeById.set(node.stateId, node));
   }
 
@@ -162,6 +171,16 @@ function draw(net, tree = null) {
     .attr("transform", d3.zoomIdentity);
 
   zoom.on("zoom", () => zoomable.attr("transform", d3.event.transform));
+
+  if (tree && tree.codelength) {
+    svg
+      .append("text")
+      .text(`Codelength: ${tree.codelength}`)
+      .attr("fill", "#444")
+      .style("font-size", 14)
+      .attr("x", 7)
+      .attr("y", 14);
+  }
 
   let node = zoomable.selectAll(".node").data(nodes);
 
