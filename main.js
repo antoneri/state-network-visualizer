@@ -68,66 +68,26 @@ function draw(net) {
     .force("link", d3.forceLink(links).distance(200))
     .force("radial", d3.forceRadial(nodeRadius / 2, d => d.node.x, d => d.node.y).strength(0.8));
 
-  function dragstarted(d) {
-    if (!d3.event.active) {
-      simulation.alphaTarget(0.3).restart();
-      stateSimulation.alphaTarget(0.8).restart();
-    }
-    d.fx = d.x;
-    d.fy = d.y;
-
-    d.states.forEach(state => {
-      state.fx = state.x;
-      state.fy = state.y;
-    });
-  }
-
-  function dragged(d) {
-    d.fx = d3.event.x;
-    d.fy = d3.event.y;
-
-    d.states.forEach(state => {
-      state.fx += d3.event.dx;
-      state.fy += d3.event.dy;
-    });
-  }
-
-  function dragended(d) {
-    if (!d3.event.active) {
-      simulation.alphaTarget(0);
-      stateSimulation.alphaTarget(0);
-    }
-    d.fx = null;
-    d.fy = null;
-
-    d.states.forEach(state => {
-      state.fx = null;
-      state.fy = null;
-    });
-  }
-
-  function statedragstarted(d) {
-    if (!d3.event.active) {
-      simulation.alphaTarget(0.01).restart();
-      stateSimulation.alphaTarget(0.5).restart();
-    }
-    d.fx = d.x;
-    d.fy = d.y;
-  }
-
-  function statedragged(d) {
-    d.fx = d3.event.x;
-    d.fy = d3.event.y;
-  }
-
-  function statedragended(d) {
-    if (!d3.event.active) {
-      simulation.alphaTarget(0);
-      stateSimulation.alphaTarget(0);
-    }
-    d.fx = null;
-    d.fy = null;
-  }
+  const dragHelper = {
+    start: d => {
+      d.fx = d.x;
+      d.fy = d.y;
+    },
+    drag: d => {
+      d.fx += d3.event.dx;
+      d.fy += d3.event.dy;
+    },
+    stop: d => {
+      d.fx = null;
+      d.fy = null;
+    },
+    setAlphaTarget: (alphaTarget = 0, stateAlphaTarget = 0) => {
+      if (!d3.event.active) {
+        simulation.alphaTarget(alphaTarget).restart();
+        stateSimulation.alphaTarget(stateAlphaTarget).restart();
+      }
+    },
+  };
 
   const defs = d3.select("#state-network").append("defs");
 
@@ -164,9 +124,20 @@ function draw(net) {
     .append("g")
     .attr("class", "node")
     .call(d3.drag()
-      .on("start", dragstarted)
-      .on("drag", dragged)
-      .on("end", dragended))
+      .on("start", d => {
+        dragHelper.setAlphaTarget(0.3, 0.8);
+        dragHelper.start(d);
+        d.states.forEach(dragHelper.start);
+      })
+      .on("drag", d => {
+        dragHelper.drag(d);
+        d.states.forEach(dragHelper.drag);
+      })
+      .on("end", d => {
+        dragHelper.setAlphaTarget();
+        dragHelper.stop(d);
+        d.states.forEach(dragHelper.stop);
+      }))
     .merge(node);
 
   node.append("circle")
@@ -225,9 +196,15 @@ function draw(net) {
     .on("mouseover", setColor("red"))
     .on("mouseout", setColor("black"))
     .call(d3.drag()
-      .on("start", statedragstarted)
-      .on("drag", statedragged)
-      .on("end", statedragended))
+      .on("start", d => {
+        dragHelper.setAlphaTarget(0.01, 0.5);
+        dragHelper.start(d);
+      })
+      .on("drag", dragHelper.drag)
+      .on("end", d => {
+        dragHelper.setAlphaTarget();
+        dragHelper.stop(d);
+      }))
     .merge(state);
 
   state.append("circle")
