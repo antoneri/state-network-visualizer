@@ -155,14 +155,15 @@ function draw(net, tree = null) {
 
   const svg = d3.select("#state-network")
     .call(zoom)
-    .call(zoom.transform, d3.zoomIdentity)
-    .append("g")
+    .call(zoom.transform, d3.zoomIdentity);
+
+  const zoomable = svg.append("g")
     .attr("id", "zoomable")
     .attr("transform", d3.zoomIdentity);
 
-  zoom.on("zoom", () => svg.attr("transform", d3.event.transform));
+  zoom.on("zoom", () => zoomable.attr("transform", d3.event.transform));
 
-  let node = svg.selectAll(".node").data(nodes);
+  let node = zoomable.selectAll(".node").data(nodes);
 
   node.exit().remove();
 
@@ -201,7 +202,7 @@ function draw(net, tree = null) {
     .style("font-style", "italic")
     .style("font-size", 40);
 
-  let link = svg.selectAll(".link").data(links);
+  let link = zoomable.selectAll(".link").data(links);
 
   link.exit().remove();
 
@@ -214,7 +215,7 @@ function draw(net, tree = null) {
     .attr("marker-end", "url(#arrow_black)")
     .merge(link);
 
-  let state = svg.selectAll(".state").data(states);
+  let state = zoomable.selectAll(".state").data(states);
 
   state.exit().remove();
 
