@@ -179,14 +179,14 @@ function draw(net) {
     const circle = d3.select(this).select("circle");
     if (circle.attr("stroke") === color) return;
     circle.attr("stroke", color);
-    const connectedNodes = new Set();
-    link.filter(link => {
-      const isSource = link.source === d;
-      if (isSource) connectedNodes.add(link.target);
-      return isSource;
-    })
-      .attr("stroke", color).attr("marker-end", `url(#arrow_${color})`);
-    state.select(function (d) { return connectedNodes.has(d) ? this : null; })
+    const targetNodes = new Set();
+    link
+      .filter(link => link.source === d)
+      .attr("stroke", color)
+      .attr("marker-end", `url(#arrow_${color})`)
+      .each(link => targetNodes.add(link.target));
+    state
+      .select(function (d) { return targetNodes.has(d) ? this : null; })
       .each(setColor(color));
   };
 
