@@ -34,6 +34,7 @@ function parseNet(net) {
 
   net.split("\n")
     .filter(line => !line.startsWith("#"))
+    .filter(Boolean)
     .forEach((line) => {
       if (line.startsWith("*")) {
         context = line.toLowerCase();
@@ -70,6 +71,7 @@ function parseTree(tree) {
   };
 
   tree.split("\n")
+    .filter(Boolean)
     .forEach((line) => {
       if (!result.codelength) {
         const codelengthMatch = line.match(/^#\s?codelength.*?(\d[\.\d]+)/im);
