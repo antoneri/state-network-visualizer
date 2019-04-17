@@ -2,11 +2,30 @@ const url = new URL(window.location.href);
 const net = url.searchParams.get("net");
 const filename = net || "states.net";
 
-fetch(filename)
-  .then(res => res.text())
-  .then(text => draw(parse(text)));
+let treename = filename;
+if (filename.lastIndexOf(".") !== -1) {
+  treename = treename.substring(0, treename.lastIndexOf("."));
+}
+treename += "_states.tree";
 
-function parse(net) {
+const fetchText = filename =>
+  fetch(filename)
+    .then(res => {
+      if (!res.ok) {
+        throw Error(res.statusText);
+      }
+      return res;
+    })
+    .then(res => res.text())
+    .catch(err => console.log(err));
+
+fetchText(filename)
+  .then(async (net) => {
+    const tree = await fetchText(treename);
+    draw(parseNet(net), tree ? parseTree(tree) : null);
+  });
+
+function parseNet(net) {
   const nodes = [];
   const states = [];
   const links = [];
@@ -44,11 +63,38 @@ function parse(net) {
   return { nodes, states, links };
 }
 
-function draw(net) {
+function parseTree(tree) {
+  const result = [];
+
+  tree.split("\n")
+    .forEach((line) => {
+      const match = line.match(/^(\d[:\d]+) (\d[\.\d]*) \"(\w+)\" (\d+)(?: (\d+))?$/);
+      if (match) {
+        const [_, path, flow, name, id, physId] = match;
+        result.push({
+          path: path.split(":").map(Number),
+          flow: +flow,
+          name,
+          id: physId ? +physId : +id,
+          stateId: physId ? +id : null,
+        });
+      }
+    });
+
+  return result;
+}
+
+function draw(net, tree = null) {
   const { nodes, states, links } = net;
   const { innerWidth, innerHeight } = window;
   const nodeRadius = 50;
   const stateRadius = 15;
+
+  const treeById = new Map();
+  if (tree) {
+    tree.filter(node => node.stateId)
+      .forEach(node => treeById.set(node.stateId, node));
+  }
 
   const phys_links = links.map(({ source, target, weight }) => ({
     source: source.node,
@@ -207,9 +253,25 @@ function draw(net) {
       }))
     .merge(state);
 
+  const colors = {
+    1: d3.schemeBlues[9],
+    2: d3.schemeGreens[9],
+    3: d3.schemeOranges[9],
+    4: d3.schemePurples[9],
+    5: d3.schemeReds[9],
+    6: d3.schemeGreys[9],
+  };
+
+  const numColors = Object.keys(colors).length;
+
   state.append("circle")
     .attr("r", stateRadius)
-    .attr("fill", "#fff")
+    .attr("fill", d => {
+      if (!tree || !treeById.has(d.id)) return "#fff";
+      const path = treeById.get(d.id).path;
+      const scheme = colors[(path[0] > numColors ? numColors : path[0])];
+      return path.length > 2 ? scheme[2 * path[1] % scheme.length] : scheme[2];
+    })
     .attr("stroke", "#000")
     .attr("opacity", 0.9)
     .append("title")
