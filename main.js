@@ -101,10 +101,10 @@ function draw(net, tree = null) {
   const nodeRadius = 50;
   const stateRadius = 15;
 
-  const treeById = new Map();
+  const pathById = new Map();
   if (tree) {
     tree.nodes.filter(node => node.stateId)
-      .forEach(node => treeById.set(node.stateId, node));
+      .forEach(node => pathById.set(node.stateId, node.path));
   }
 
   const phys_links = links.map(({ source, target, weight }) => ({
@@ -284,8 +284,8 @@ function draw(net, tree = null) {
   state.append("circle")
     .attr("r", stateRadius)
     .attr("fill", d => {
-      if (!tree || !treeById.has(d.id)) return "#fff";
-      const path = treeById.get(d.id).path;
+      if (!tree || !pathById.has(d.id)) return "#fff";
+      const path = pathById.get(d.id);
       const scheme = colorSchemes[Math.min(path[0], numColors)];
       return scheme[path.length > 2 ? (2 + path[1]) % scheme.length : 2];
     })
