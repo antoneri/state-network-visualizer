@@ -161,7 +161,7 @@ function draw(net, tree = null) {
 
   const stateSimulation = d3.forceSimulation(states)
     .force("collide", d3.forceCollide(stateRadius))
-    .force("charge", d3.forceManyBody().strength(-200))
+    .force("charge", d3.forceManyBody().strength(-200).distanceMax(2 * nodeRadius))
     .force("link", d3.forceLink(links).distance(d => d.source.node === d.target.node ? 2 * nodeRadius : 200))
     .force("radial", d3.forceRadial(nodeRadius / 2, d => d.node.x, d => d.node.y).strength(0.8));
 
