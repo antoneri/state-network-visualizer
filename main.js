@@ -54,7 +54,7 @@ function parseNet(net) {
           if (!node) {
             throw new Error(`No physical node with id ${physId} found!`);
           }
-          const state = { id: +id, node, name };
+          const state = { id: +id, node, name, links: [] };
           statesById.set(id, state);
           node.states.push(state);
         }
@@ -67,7 +67,9 @@ function parseNet(net) {
           if (!(source && target)) {
             throw new Error("Source or target state not found!");
           }
-          links.push({ source, target, weight: +weight });
+          const link = { source, target, weight: +weight };
+          source.links.push(link);
+          links.push(link);
         }
       }
     });
@@ -108,6 +110,24 @@ function parseTree(tree) {
     });
 
   return result;
+}
+
+function entropyRate({ states, links }) {
+  const entropy = p => -p * Math.log2(p);
+
+  const H = states.reduce((H, state) => {
+    const weights = state.links.map(link => link.weight);
+    const outWeight = weights.reduce((a, b) => a + b, 0);
+    const h = weights
+      .map(weight => entropy(weight / outWeight))
+      .reduce((a, b) => a + b, 0);
+    return H + h * outWeight;
+  }, 0);
+
+  const totWeight = links
+    .map(link => link.weight)
+    .reduce((a, b) => a + b, 0);
+  return H / totWeight;
 }
 
 function aggregatePhysLinks(stateLinks) {
@@ -214,14 +234,23 @@ function draw(net, tree = null) {
 
   zoom.on("zoom", () => zoomable.attr("transform", d3.event.transform));
 
+  const entRate = entropyRate(net);
+  svg
+    .append("text")
+    .text(`Entropy rate: ${entRate > 0 ? entRate.toFixed(4) : entRate}`)
+    .attr("fill", "#444")
+    .style("font-size", 14)
+    .attr("x", 5)
+    .attr("y", 14);
+
   if (tree && tree.codelength) {
     svg
       .append("text")
       .text(`Codelength: ${tree.codelength}`)
       .attr("fill", "#444")
       .style("font-size", 14)
-      .attr("x", 7)
-      .attr("y", 14);
+      .attr("x", 5)
+      .attr("y", 32);
   }
 
   let node = zoomable.selectAll(".node").data(nodes);
