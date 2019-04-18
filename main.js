@@ -26,8 +26,8 @@ fetchText(filename)
   });
 
 function parseNet(net) {
-  const nodes = [];
-  const states = [];
+  const nodesById = new Map();
+  const statesById = new Map();
   const links = [];
 
   let context = "";
@@ -37,31 +37,46 @@ function parseNet(net) {
     .filter(Boolean)
     .forEach((line) => {
       if (line.startsWith("*")) {
-        context = line.toLowerCase();
-      } else if (context === "*vertices") {
-        const [_, id, name] = line.match(/(\d+) "(.+)"/);
-        nodes.push({ id: +id, name, states: [] });
-      } else if (context === "*states") {
-        const [_, id, phys_id, name] = line.match(/(\d+) (\d+) "(.+)"/);
-        const node = nodes.find(node => node.id === +phys_id);
-        if (!node) {
-          throw new Error("No physical node found!");
+        const match = line.match(/^\*(vertices|states|links)/i);
+        context = match ? match[1].toLowerCase() : "";
+      } else if (context === "vertices") {
+        const match = line.match(/(\d+) "(.+)"/);
+        if (match) {
+          const [_, id, name] = match;
+          const node = { id: +id, name, states: [] };
+          nodesById.set(id, node);
         }
-        const state = { id: +id, node, name };
-        node.states.push(state);
-        states.push(state);
-      } else if (context === "*links") {
-        const [_, source_id, target_id, weight] = line.match(/(\d+) (\d+) ([\d\.]+)/);
-        const source = states.find(state => state.id === +source_id);
-        const target = states.find(state => state.id === +target_id);
-        if (!(source && target)) {
-          throw new Error("Source or target state not found!");
+      } else if (context === "states") {
+        const match = line.match(/(\d+) (\d+) "(.+)"/);
+        if (match) {
+          const [_, id, physId, name] = match;
+          const node = nodesById.get(physId);
+          if (!node) {
+            throw new Error(`No physical node with id ${physId} found!`);
+          }
+          const state = { id: +id, node, name };
+          statesById.set(id, state);
+          node.states.push(state);
         }
-        links.push({ source, target, weight: +weight });
+      } else if (context === "links") {
+        const match = line.match(/(\d+) (\d+) (\d(?:\.\d+)?)/);
+        if (match) {
+          const [_, sourceId, targetId, weight] = match;
+          const source = statesById.get(sourceId);
+          const target = statesById.get(targetId);
+          if (!(source && target)) {
+            throw new Error("Source or target state not found!");
+          }
+          links.push({ source, target, weight: +weight });
+        }
       }
     });
 
-  return { nodes, states, links };
+  return {
+    nodes: Array.from(nodesById.values()),
+    states: Array.from(statesById.values()),
+    links,
+  };
 }
 
 function parseTree(tree) {
@@ -74,12 +89,12 @@ function parseTree(tree) {
     .filter(Boolean)
     .forEach((line) => {
       if (!result.codelength) {
-        const codelengthMatch = line.match(/^#\s?codelength.*?(\d[\.\d]+)/im);
+        const codelengthMatch = line.match(/^#\s?codelength.*?(\d(?:\.\d+)?)/i);
         if (codelengthMatch) {
           result.codelength = +codelengthMatch[1];
         }
       }
-      const match = line.match(/^(\d[:\d]+) (\d[\.\d]*) \"(\w+)\" (\d+)(?: (\d+))?$/);
+      const match = line.match(/(\d(?::\d)+) (\d(?:\.\d+)?) "(.+)" (\d+)(?: (\d+))?/);
       if (match) {
         const [_, path, flow, name, id, physId] = match;
         result.nodes.push({
