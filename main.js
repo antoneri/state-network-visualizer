@@ -110,6 +110,35 @@ function parseTree(tree) {
   return result;
 }
 
+function aggregatePhysLinks(stateLinks) {
+  const physLinks = stateLinks.map(({ source, target, weight }) => ({
+    source: source.node,
+    target: target.node,
+    weight,
+  }));
+
+  const linkSources = new Map();
+
+  physLinks.forEach(link => {
+    if (!linkSources.has(link.source)) {
+      linkSources.set(link.source, new Map());
+    }
+    const targets = linkSources.get(link.source);
+    const weight = targets.get(link.target) || 0;
+    targets.set(link.target, weight + link.weight);
+  });
+
+  const aggregatedPhysLinks = [];
+
+  for (let [source, targets] of linkSources) {
+    for (let [target, weight] of targets) {
+      aggregatedPhysLinks.push({ source, target, weight });
+    }
+  }
+
+  return aggregatedPhysLinks;
+}
+
 function draw(net, tree = null) {
   const { nodes, states, links } = net;
   const { innerWidth, innerHeight } = window;
@@ -122,17 +151,13 @@ function draw(net, tree = null) {
       .forEach(node => pathById.set(node.stateId, node.path));
   }
 
-  const phys_links = links.map(({ source, target, weight }) => ({
-    source: source.node,
-    target: target.node,
-    weight,
-  }));
+  const aggregatedPhysLinks = aggregatePhysLinks(links);
 
   const simulation = d3.forceSimulation(nodes)
     .force("center", d3.forceCenter(innerWidth / 2, innerHeight / 2))
     .force("collide", d3.forceCollide(2 * nodeRadius))
     .force("charge", d3.forceManyBody().strength(-1000))
-    .force("link", d3.forceLink(phys_links).distance(200));
+    .force("link", d3.forceLink(aggregatedPhysLinks).distance(200));
 
   const stateSimulation = d3.forceSimulation(states)
     .force("collide", d3.forceCollide(stateRadius))
