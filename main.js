@@ -25,14 +25,14 @@ fetchText(filename)
     draw(parseNet(net), tree ? parseTree(tree) : null);
   });
 
-function parseNet(net) {
+function parseNet(lines) {
   const nodesById = new Map();
   const statesById = new Map();
   const links = [];
 
   let context = "";
 
-  net.split("\n")
+  lines.split("\n")
     .filter(line => !line.startsWith("#"))
     .filter(Boolean)
     .forEach((line) => {
@@ -81,20 +81,22 @@ function parseNet(net) {
   };
 }
 
-function parseTree(tree) {
+function parseCodelength(line) {
+  const match = line.match(/^#\s?codelength.*?(\d(?:\.\d+)?)/i);
+  return match ? +match[1] : null;
+}
+
+function parseTree(lines) {
   const result = {
     codelength: null,
     nodes: [],
   };
 
-  tree.split("\n")
+  lines.split("\n")
     .filter(Boolean)
     .forEach((line) => {
       if (!result.codelength) {
-        const codelengthMatch = line.match(/^#\s?codelength.*?(\d(?:\.\d+)?)/i);
-        if (codelengthMatch) {
-          result.codelength = +codelengthMatch[1];
-        }
+        result.codelength = parseCodelength(line);
       }
       const match = line.match(/(\d(?::\d)+) (\d(?:\.\d+)?) "(.+)" (\d+)(?: (\d+))?/);
       if (match) {
