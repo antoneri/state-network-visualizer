@@ -86,6 +86,35 @@ function parseCodelength(line) {
   return match ? +match[1] : null;
 }
 
+function parseClu(lines) {
+  const result = {
+    codelength: null,
+    nodes: [],
+  };
+
+  lines.split("\n")
+    .filter(Boolean)
+    .forEach((line) => {
+      if (!result.codelength) {
+        result.codelength = parseCodelength(line);
+      }
+      const match = line.match(/(\d+) (\d+) (\d(?:\.\d+)?)(?: (\d+))?/);
+      if (match) {
+        const [_, id, module, flow, physId] = match;
+        const stateId = physId ? +id : null;
+        result.nodes.push({
+          path: [+module, stateId ? stateId : +id],
+          flow: +flow,
+          name: id,
+          id: physId ? +physId : +id,
+          stateId,
+        });
+      }
+    });
+
+  return result;
+}
+
 function parseTree(lines) {
   const result = {
     codelength: null,
