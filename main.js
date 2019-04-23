@@ -377,8 +377,8 @@ function draw(net, tree = null) {
     const y2 = d.target.y || 0;
     const dx = x2 - x1 || 1e-6;
     const dy = y2 - y1 || 1e-6;
-    const r = Math.sqrt(dx * dx + dy * dy);
-    const dir = { x: dx / r, y: dy / r };
+    const l = Math.sqrt(dx * dx + dy * dy);
+    const dir = { x: dx / l, y: dy / l };
 
     d3.select(this)
       .attr("x1", x1 + r * dir.x)
