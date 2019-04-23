@@ -388,10 +388,6 @@ function draw(net, tree = null) {
   };
 
   simulation.on("tick", () => {
-    stateSimulation.force("radial")
-      .x(d => d.node.x)
-      .y(d => d.node.y);
-
     link
       .each(drawLink(stateRadius));
 

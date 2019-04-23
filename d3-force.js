@@ -522,9 +522,7 @@ function radial(radius, x, y) {
   var nodes,
       strength = constant(0.1),
       strengths,
-      radiuses,
-      xs,
-      ys;
+      radiuses;
 
   if (typeof radius !== "function") radius = constant(+radius);
   if (typeof x !== "function") x = constant(x == null ? 0 : +x);
@@ -533,8 +531,8 @@ function radial(radius, x, y) {
   function force(alpha) {
     for (var i = 0, n = nodes.length; i < n; ++i) {
       var node = nodes[i],
-          dx = node.x - xs[i] || 1e-6,
-          dy = node.y - ys[i] || 1e-6,
+          dx = node.x - +x(nodes[i], i, nodes) || 1e-6,
+          dy = node.y - +y(nodes[i], i, nodes) || 1e-6,
           r = Math.sqrt(dx * dx + dy * dy),
           k = (radiuses[i] - r) * strengths[i] * alpha / r;
       node.vx += dx * k;
@@ -547,12 +545,8 @@ function radial(radius, x, y) {
     var i, n = nodes.length;
     strengths = new Array(n);
     radiuses = new Array(n);
-    xs = new Array(n);
-    ys = new Array(n);
     for (i = 0; i < n; ++i) {
       radiuses[i] = +radius(nodes[i], i, nodes);
-      xs[i] = +x(nodes[i], i, nodes);
-      ys[i] = +y(nodes[i], i, nodes);
       strengths[i] = isNaN(radiuses[i]) ? 0 : +strength(nodes[i], i, nodes);
     }
   }
@@ -570,11 +564,11 @@ function radial(radius, x, y) {
   };
 
   force.x = function(_) {
-    return arguments.length ? (x = typeof _ === "function" ? _ : constant(+_), initialize(), force) : x;
+    return arguments.length ? (x = typeof _ === "function" ? _ : constant(+_), force) : x;
   };
 
   force.y = function(_) {
-    return arguments.length ? (y = typeof _ === "function" ? _ : constant(+_), initialize(), force) : y;
+    return arguments.length ? (y = typeof _ === "function" ? _ : constant(+_), force) : y;
   };
 
   return force;
