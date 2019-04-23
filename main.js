@@ -114,6 +114,35 @@ function parseTree(lines) {
   return result;
 }
 
+function parseFTree(lines) {
+  const result = {
+    codelength: null,
+    nodes: [],
+  };
+
+  let validLines = lines.split("\n").filter(Boolean);
+
+  for (let line of validLines) {
+    if (line.startsWith("*")) break;
+    if (!result.codelength) {
+      result.codelength = parseCodelength(line);
+    }
+    const match = line.match(/(\d(?::\d)+) (\d(?:\.\d+)?) "(.+)" (\d+)(?: (\d+))?/);
+    if (match) {
+      const [_, path, flow, name, id, physId] = match;
+      result.nodes.push({
+        path: path.split(":").map(Number),
+        flow: +flow,
+        name,
+        id: physId ? +physId : +id,
+        stateId: physId ? +id : null,
+      });
+    }
+  }
+
+  return result;
+}
+
 function entropyRate({ states, links }) {
   const entropy = p => -p * Math.log2(p);
 
