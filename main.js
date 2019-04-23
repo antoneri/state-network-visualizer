@@ -299,7 +299,7 @@ function draw(net, tree = null) {
   link = link.enter()
     .append("line")
     .attr("class", "link")
-    .attr("opacity", 0.8)
+    .attr("opacity", 1)
     .attr("stroke", "#000")
     .attr("stroke-width", d => d.weight)
     .attr("marker-end", "url(#arrow_black)")
