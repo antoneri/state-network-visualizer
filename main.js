@@ -380,14 +380,18 @@ function draw(net, tree = null) {
     4: d3.schemeGreys[9],
   };
 
-  const numColors = Object.keys(colorSchemes).length;
+  const smallestClusterId = Math.min(...Array.from(pathById.values()).map(path => path[0]));
+  const schemeRange = [...Object.keys(colorSchemes)].map(Number);
+  const schemeDomain = [...Array(schemeRange.length).keys()].map((_, i) => smallestClusterId + i);
+  const lastScheme = Math.max(...schemeRange);
+  const pathToSchemeId = d3.scaleOrdinal().domain(schemeDomain).range(schemeRange).unknown(lastScheme);
 
   state.append("circle")
     .attr("r", stateRadius)
     .attr("fill", d => {
       if (!tree || !pathById.has(d.id)) return "#fff";
       const path = pathById.get(d.id);
-      const scheme = colorSchemes[Math.min(path[0], numColors)];
+      const scheme = colorSchemes[pathToSchemeId(path[0])];
       return scheme[path.length > 2 ? (2 + path[1]) % scheme.length : 2];
     })
     .attr("stroke", "#000")
