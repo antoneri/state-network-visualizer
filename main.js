@@ -375,10 +375,10 @@ function draw(net, tree = null) {
     const y1 = d.source.y || 0;
     const x2 = d.target.x || 0;
     const y2 = d.target.y || 0;
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    const l = Math.sqrt(dx * dx + dy * dy) || 1;
-    const dir = { x: dx / l, y: dy / l };
+    const dx = x2 - x1 || 1e-6;
+    const dy = y2 - y1 || 1e-6;
+    const r = Math.sqrt(dx * dx + dy * dy);
+    const dir = { x: dx / r, y: dy / r };
 
     d3.select(this)
       .attr("x1", x1 + r * dir.x)
