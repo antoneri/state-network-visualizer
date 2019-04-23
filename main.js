@@ -180,6 +180,7 @@ function draw(net, tree = null) {
     .force("link", d3.forceLink(aggregatedPhysLinks).distance(200));
 
   const stateSimulation = d3.forceSimulation(states)
+    .force("center", d3.forceCenter(innerWidth / 2, innerHeight / 2))
     .force("collide", d3.forceCollide(stateRadius))
     .force("charge", d3.forceManyBody().strength(-200).distanceMax(2 * nodeRadius))
     .force("link", d3.forceLink(links).distance(d => d.source.node === d.target.node ? 2 * nodeRadius : 200))
