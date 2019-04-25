@@ -1,6 +1,7 @@
 import { parseState, parseTree } from "@mapequation/infoparse";
 import * as d3 from "d3";
 import { forceRadial } from "./d3-force";
+import { entropyRate } from "./infomath";
 
 
 const url = new URL(window.location.href);
@@ -64,24 +65,6 @@ function connectNetwork(network) {
     states: Array.from(statesById.values()),
     links,
   };
-}
-
-function entropyRate({ states, links }) {
-  const entropy = p => -p * Math.log2(p);
-
-  const H = states.reduce((H, state) => {
-    const weights = state.links.map(link => link.weight);
-    const outWeight = weights.reduce((a, b) => a + b, 0);
-    const h = weights
-      .map(weight => entropy(weight / outWeight))
-      .reduce((a, b) => a + b, 0);
-    return H + h * outWeight;
-  }, 0);
-
-  const totWeight = links
-    .map(link => link.weight)
-    .reduce((a, b) => a + b, 0);
-  return H / totWeight;
 }
 
 function aggregatePhysLinks(stateLinks) {
