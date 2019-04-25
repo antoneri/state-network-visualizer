@@ -1,5 +1,7 @@
+import { parseState, parseTree } from "@mapequation/infoparse";
 import * as d3 from "d3";
 import { forceRadial } from "./d3-force";
+
 
 const url = new URL(window.location.href);
 const net = url.searchParams.get("net");
@@ -25,154 +27,43 @@ const fetchText = filename =>
 fetchText(filename)
   .then(async (net) => {
     const tree = await fetchText(treename);
-    draw(parseNet(net), tree ? parseTree(tree) : null);
+    const network = parseState(net.split("\n").filter(Boolean));
+    const treeNetwork = tree ? parseTree(tree.split("\n").filter(Boolean)) : null;
+    draw(connectNetwork(network), treeNetwork);
   });
 
-function parseNet(lines) {
-  const nodesById = new Map();
-  const statesById = new Map();
-  const links = [];
+function connectNetwork(network) {
+  const nodesById = new Map(network.vertices.map(node => [node.id, {
+    ...node,
+    states: [],
+  }]));
 
-  let context = "";
+  const statesById = new Map(network.states.map(state => {
+    const physicalNode = nodesById.get(state.physicalId);
+    const stateNode = {
+      ...state,
+      node: physicalNode,
+      links: [],
+    };
+    physicalNode.states.push(state);
+    return [state.id, stateNode];
+  }));
 
-  lines.split("\n")
-    .filter(line => !line.startsWith("#"))
-    .filter(Boolean)
-    .forEach((line) => {
-      if (line.startsWith("*")) {
-        const match = line.match(/^\*(vertices|states|links)/i);
-        context = match ? match[1].toLowerCase() : "";
-      } else if (context === "vertices") {
-        const match = line.match(/(\d+) "(.+)"/);
-        if (match) {
-          const [_, id, name] = match;
-          const node = { id: +id, name, states: [] };
-          nodesById.set(id, node);
-        }
-      } else if (context === "states") {
-        const match = line.match(/(\d+) (\d+) "(.+)"/);
-        if (match) {
-          const [_, id, physId, name] = match;
-          const node = nodesById.get(physId);
-          if (!node) {
-            throw new Error(`No physical node with id ${physId} found!`);
-          }
-          const state = { id: +id, node, name, links: [] };
-          statesById.set(id, state);
-          node.states.push(state);
-        }
-      } else if (context === "links") {
-        const match = line.match(/(\d+) (\d+) (\d(?:\.\d+)?)/);
-        if (match) {
-          const [_, sourceId, targetId, weight] = match;
-          const source = statesById.get(sourceId);
-          const target = statesById.get(targetId);
-          if (!(source && target)) {
-            throw new Error("Source or target state not found!");
-          }
-          const link = { source, target, weight: +weight };
-          source.links.push(link);
-          links.push(link);
-        }
-      }
-    });
+  const links = network.links.map(link => {
+    const linkObject = {
+      source: statesById.get(link.source),
+      target: statesById.get(link.target),
+      weight: link.weight,
+    };
+    linkObject.source.links.push(linkObject);
+    return linkObject;
+  });
 
   return {
     nodes: Array.from(nodesById.values()),
     states: Array.from(statesById.values()),
     links,
   };
-}
-
-function parseCodelength(line) {
-  const match = line.match(/^#\s?codelength.*?(\d(?:\.\d+)?)/i);
-  return match ? +match[1] : null;
-}
-
-function parseClu(lines) {
-  const result = {
-    codelength: null,
-    nodes: [],
-  };
-
-  lines.split("\n")
-    .filter(Boolean)
-    .forEach((line) => {
-      if (!result.codelength) {
-        result.codelength = parseCodelength(line);
-      }
-      const match = line.match(/(\d+) (\d+) (\d(?:\.\d+)?)(?: (\d+))?/);
-      if (match) {
-        const [_, id, module, flow, physId] = match;
-        const stateId = physId ? +id : null;
-        result.nodes.push({
-          path: [+module, stateId ? stateId : +id],
-          flow: +flow,
-          name: id,
-          id: physId ? +physId : +id,
-          stateId,
-        });
-      }
-    });
-
-  return result;
-}
-
-function parseTree(lines) {
-  const result = {
-    codelength: null,
-    nodes: [],
-  };
-
-  lines.split("\n")
-    .filter(Boolean)
-    .forEach((line) => {
-      if (!result.codelength) {
-        result.codelength = parseCodelength(line);
-      }
-      const match = line.match(/(\d(?::\d)+) (\d(?:\.\d+)?) "(.+)" (\d+)(?: (\d+))?/);
-      if (match) {
-        const [_, path, flow, name, id, physId] = match;
-        result.nodes.push({
-          path: path.split(":").map(Number),
-          flow: +flow,
-          name,
-          id: physId ? +physId : +id,
-          stateId: physId ? +id : null,
-        });
-      }
-    });
-
-  return result;
-}
-
-function parseFTree(lines) {
-  const result = {
-    codelength: null,
-    nodes: [],
-  };
-
-  let validLines = lines.split("\n").filter(Boolean);
-
-  for (let line of validLines) {
-    if (line.startsWith("*")) break;
-    if (!result.codelength) {
-      result.codelength = parseCodelength(line);
-    }
-    const match = line.match(/(\d(?::\d)+) (\d(?:\.\d+)?) "(.+)" (\d+)(?: (\d+))?/);
-    if (match) {
-      const [_, path, flow, name, id, physId] = match;
-      result.nodes.push({
-        path: path.split(":").map(Number),
-        flow: +flow,
-        name,
-        id: physId ? +physId : +id,
-        stateId: physId ? +id : null,
-      });
-    }
-  }
-
-  return result;
 }
 
 function entropyRate({ states, links }) {
@@ -231,7 +122,7 @@ function draw(net, tree = null) {
   const pathById = new Map();
   if (tree) {
     tree.nodes.filter(node => node.stateId)
-      .forEach(node => pathById.set(node.stateId, node.path));
+      .forEach(node => pathById.set(node.stateId, node.path.split(":").map(Number)));
   }
 
   const aggregatedPhysLinks = aggregatePhysLinks(links);
