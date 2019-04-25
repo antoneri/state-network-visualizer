@@ -1,3 +1,6 @@
+import * as d3 from "d3";
+import { forceRadial } from "./d3-force";
+
 const url = new URL(window.location.href);
 const net = url.searchParams.get("net");
 const filename = net || "example.net";
@@ -244,7 +247,7 @@ function draw(net, tree = null) {
     .force("collide", d3.forceCollide(stateRadius))
     .force("charge", d3.forceManyBody().strength(-200).distanceMax(2 * nodeRadius))
     .force("link", d3.forceLink(links).distance(d => d.source.node === d.target.node ? 2 * nodeRadius : 200))
-    .force("radial", d3.forceRadial(nodeRadius / 2, d => d.node.x, d => d.node.y).strength(0.8));
+    .force("radial", forceRadial(nodeRadius / 2, d => d.node.x, d => d.node.y).strength(0.8));
 
   const dragHelper = {
     start: d => {

@@ -1,0 +1,37 @@
+{
+  "name": "@mapequation/state-network-visualizer",
+  "version": "0.0.1",
+  "description": "Visualize state networks using force directed layout",
+  "main": "src/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "webpack --watch",
+    "build": "webpack",
+    "start": "webpack-dev-server --open"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/antoneri/state-network-visualizer.git"
+  },
+  "keywords": [
+    "map equation",
+    "infomap",
+    "visualization",
+    "network theory"
+  ],
+  "author": "Anton Eriksson",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/antoneri/state-network-visualizer/issues"
+  },
+  "homepage": "https://github.com/antoneri/state-network-visualizer#readme",
+  "devDependencies": {
+    "webpack": "^4.30.0",
+    "webpack-cli": "^3.3.1",
+    "webpack-dev-server": "^3.3.1"
+  },
+  "dependencies": {
+    "@mapequation/infoparse": "latest",
+    "d3": "^5.9.2"
+  }
+}
