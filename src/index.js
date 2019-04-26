@@ -1,6 +1,7 @@
 import { parseState, parseTree } from "@mapequation/infoparse";
 import * as d3 from "d3";
 import { forceRadial } from "./d3-force";
+import fetchText from "./fetch-text";
 import { entropyRate } from "./infomath";
 
 
@@ -13,17 +14,6 @@ if (filename.lastIndexOf(".") !== -1) {
   treename = treename.substring(0, treename.lastIndexOf("."));
 }
 treename += "_states.tree";
-
-const fetchText = filename =>
-  fetch(filename)
-    .then(res => {
-      if (!res.ok) {
-        throw Error(res.statusText);
-      }
-      return res;
-    })
-    .then(res => res.text())
-    .catch(err => console.log(err));
 
 fetchText(filename)
   .then(async (net) => {
