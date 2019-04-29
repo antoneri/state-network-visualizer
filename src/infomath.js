@@ -10,16 +10,15 @@ export function entropy(X) {
   return H;
 }
 
-export function entropyRate({ states, links }) {
-  const H = states.reduce((H, state) => {
-    const weights = state.links.map(link => link.weight);
-    const outWeight = weights.reduce((a, b) => a + b, 0);
-    const normalizedWeights = weights.map(weight => weight / outWeight);
+export function entropyRate(weights) {
+  let totWeight = 0;
+
+  const H = weights.reduce((H, w) => {
+    const outWeight = w.reduce((a, b) => a + b, 0);
+    totWeight += outWeight;
+    const normalizedWeights = w.map(weight => weight / outWeight);
     return H + entropy(normalizedWeights) * outWeight;
   }, 0);
 
-  const totWeight = links
-    .map(link => link.weight)
-    .reduce((a, b) => a + b, 0);
   return H / totWeight;
 }

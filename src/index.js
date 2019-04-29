@@ -162,7 +162,7 @@ function draw(net, tree = null) {
 
   zoom.on("zoom", () => zoomable.attr("transform", d3.event.transform));
 
-  const entRate = entropyRate(net);
+  const entRate = entropyRate(states.map(state => state.links.map(link => link.weight)));
   svg
     .append("text")
     .text(`Entropy rate: ${entRate > 0 ? entRate.toFixed(4) : entRate}`)
