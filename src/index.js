@@ -9,18 +9,23 @@ const url = new URL(window.location.href);
 const net = url.searchParams.get("net");
 const filename = net || "example.net";
 
-let treename = filename;
-if (filename.lastIndexOf(".") !== -1) {
-  treename = treename.substring(0, treename.lastIndexOf("."));
-}
-treename += "_states.tree";
+const toTreeName = filename => {
+  let name = filename;
+  const lastIndex = name.lastIndexOf(".");
+  if (lastIndex !== -1) name = name.substring(0, lastIndex);
+  return name + "_states.tree";
+};
+
+let treeName = url.searchParams.get("tree") || toTreeName(filename);
+
+const nonEmptyLines = file => file.split("\n").filter(Boolean);
 
 fetchText(filename)
   .then(async (net) => {
-    const tree = await fetchText(treename);
-    const network = parseState(net.split("\n").filter(Boolean));
-    const treeNetwork = tree ? parseTree(tree.split("\n").filter(Boolean)) : null;
-    draw(connectNetwork(network), treeNetwork);
+    const treeText = await fetchText(treeName);
+    const connectedNetwork = connectNetwork(parseState(nonEmptyLines(net)));
+    const tree = treeText ? parseTree(nonEmptyLines(treeText)) : null;
+    draw(connectedNetwork, tree);
   });
 
 function connectNetwork(network) {
