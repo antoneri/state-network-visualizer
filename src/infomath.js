@@ -16,7 +16,8 @@ export function entropyRate(weights) {
   const H = weights.reduce((H, w) => {
     const outWeight = w.reduce((a, b) => a + b, 0);
     totWeight += outWeight;
-    const normalizedWeights = w.map(weight => weight / outWeight);
+    const isNormalized = Math.abs(outWeight - 1) < 1e-6;
+    const normalizedWeights = !isNormalized ? w.map(weight => weight / outWeight) : w;
     return H + entropy(normalizedWeights) * outWeight;
   }, 0);
 
