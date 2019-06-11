@@ -293,7 +293,8 @@ function draw(net, tree = null) {
       if (!tree || !pathById.has(d.id)) return "#fff";
       const path = pathById.get(d.id);
       const scheme = colorSchemes[pathToSchemeId(path[0])];
-      return scheme[path.length > 2 ? (2 + path[1]) % scheme.length : 2];
+      const colorIndex = path.length > 2 ? (2 + path[1]) % scheme.length : 2;
+      return scheme[colorIndex];
     })
     .attr("stroke", "#000")
     .attr("opacity", 0.9)
