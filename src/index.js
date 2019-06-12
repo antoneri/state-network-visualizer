@@ -218,12 +218,12 @@ function draw(net, tree = null) {
     .text(d => d.name);
 
   node.append("text")
-    .text(d => d.name)
+    .text(d => d.id)
     .attr("text-anchor", "middle")
     .attr("fill", "#999")
-    .attr("dy", 9)
+    .attr("dy", 12)
     .style("font-style", "italic")
-    .style("font-size", 23);
+    .style("font-size", 40);
 
   let link = zoomable.selectAll(".link").data(links);
 
@@ -297,7 +297,7 @@ function draw(net, tree = null) {
       return scheme[colorIndex];
     })
     .attr("stroke", "#000")
-    .attr("opacity", 0.7)
+    .attr("opacity", 0.9)
     .append("title")
     .text(d => d.name);
 
