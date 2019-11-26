@@ -185,6 +185,10 @@ function draw(net) {
     .style("font-style", "italic")
     .style("font-size", 40);
 
+  const maxLinkWeight = Math.max(...links.map(link => link.weight));
+
+  const linkWidth = d3.scaleLinear().domain([0, maxLinkWeight]).range([0.1, 3]);
+
   let link = zoomable.selectAll(".link").data(links);
 
   link.exit().remove();
@@ -194,7 +198,7 @@ function draw(net) {
     .attr("class", "link")
     .attr("opacity", 1)
     .attr("stroke", "#000")
-    .attr("stroke-width", d => d.weight)
+    .attr("stroke-width", d => linkWidth(d.weight))
     .attr("marker-end", "url(#arrow_black)")
     .merge(link);
 
