@@ -1,32 +1,17 @@
-import { parseState, parseTree } from "@mapequation/infoparse";
+import { parseState } from "@mapequation/infoparse";
 import * as d3 from "d3";
 import { forceRadial } from "./d3-force";
 import fetchText from "./fetch-text";
-import { entropyRate } from "./infomath";
 
 
 const url = new URL(window.location.href);
 const net = url.searchParams.get("net");
 const filename = net || "example.net";
 
-const toTreeName = filename => {
-  let name = filename;
-  const lastIndex = name.lastIndexOf(".");
-  if (lastIndex !== -1) name = name.substring(0, lastIndex);
-  return name + "_states.tree";
-};
-
-let treeName = url.searchParams.get("tree") || toTreeName(filename);
-
 const nonEmptyLines = file => file.split("\n").filter(Boolean);
 
 fetchText(filename)
-  .then(async (net) => {
-    const treeText = await fetchText(treeName);
-    const connectedNetwork = connectNetwork(parseState(nonEmptyLines(net)));
-    const tree = treeText ? parseTree(nonEmptyLines(treeText)) : null;
-    draw(connectedNetwork, tree);
-  });
+  .then(net => draw(connectNetwork(parseState(nonEmptyLines(net)))));
 
 function connectNetwork(network) {
   const nodesById = new Map(network.vertices.map(node => [node.id, {
@@ -91,17 +76,11 @@ function aggregatePhysLinks(stateLinks) {
   return aggregatedPhysLinks;
 }
 
-function draw(net, tree = null) {
+function draw(net) {
   const { nodes, states, links } = net;
   const { innerWidth, innerHeight } = window;
   const nodeRadius = 50;
   const stateRadius = 15;
-
-  const pathById = new Map();
-  if (tree) {
-    tree.nodes.filter(node => node.stateId)
-      .forEach(node => pathById.set(node.stateId, node.path.split(":").map(Number)));
-  }
 
   const aggregatedPhysLinks = aggregatePhysLinks(links);
 
@@ -166,25 +145,6 @@ function draw(net, tree = null) {
     .attr("transform", d3.zoomIdentity);
 
   zoom.on("zoom", () => zoomable.attr("transform", d3.event.transform));
-
-  const entRate = entropyRate(states.map(state => state.links.map(link => link.weight)));
-  svg
-    .append("text")
-    .text(`Entropy rate: ${entRate > 0 ? entRate.toFixed(4) : entRate}`)
-    .attr("fill", "#444")
-    .style("font-size", 14)
-    .attr("x", 5)
-    .attr("y", 14);
-
-  if (tree && tree.codelength) {
-    svg
-      .append("text")
-      .text(`Codelength: ${tree.codelength}`)
-      .attr("fill", "#444")
-      .style("font-size", 14)
-      .attr("x", 5)
-      .attr("y", 32);
-  }
 
   let node = zoomable.selectAll(".node").data(nodes);
 
@@ -274,28 +234,9 @@ function draw(net, tree = null) {
       }))
     .merge(state);
 
-  const colorSchemes = {
-    1: d3.schemeBuPu[9],
-    2: d3.schemeOrRd[9],
-    3: d3.schemeYlGn[9],
-    4: d3.schemeGreys[9],
-  };
-
-  const smallestClusterId = Math.min(...Array.from(pathById.values()).map(path => path[0]));
-  const schemeRange = [...Object.keys(colorSchemes)].map(Number);
-  const schemeDomain = [...Array(schemeRange.length).keys()].map((_, i) => smallestClusterId + i);
-  const lastScheme = Math.max(...schemeRange);
-  const pathToSchemeId = d3.scaleOrdinal().domain(schemeDomain).range(schemeRange).unknown(lastScheme);
-
   state.append("circle")
     .attr("r", stateRadius)
-    .attr("fill", d => {
-      if (!tree || !pathById.has(d.id)) return "#fff";
-      const path = pathById.get(d.id);
-      const scheme = colorSchemes[pathToSchemeId(path[0])];
-      const colorIndex = path.length > 2 ? (2 + path[1]) % scheme.length : 2;
-      return scheme[colorIndex];
-    })
+    .attr("fill", "#fff")
     .attr("stroke", "#000")
     .attr("opacity", 0.9)
     .append("title")
